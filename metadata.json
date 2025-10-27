@@ -1,0 +1,5 @@
+{
+  "name": "Hello Study Interactive Movie ver.1",
+  "description": "An application where users can send stamps that flow across a video in real-time, similar to Niconico Douga's comment system. It features separate admin and user views for controlling playback and sending stamps.",
+  "requestFramePermissions": []
+}
