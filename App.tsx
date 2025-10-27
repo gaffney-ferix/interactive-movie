@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import AdminPage from './pages/AdminPage';
@@ -11,7 +10,7 @@ const App: React.FC = () => {
       <div className="bg-gray-900 text-white min-h-screen font-sans">
         <Routes>
           <Route path="/admin" element={<AdminPage />} />
-          <Route path="/user" element={<UserPage />} />
+          <Route path="/user/:hostId" element={<UserPage />} />
           <Route path="/" element={<HomePage />} />
         </Routes>
       </div>

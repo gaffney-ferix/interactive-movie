@@ -1,13 +1,13 @@
-
 import React, { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { useBroadcastChannel } from '../hooks/useBroadcastChannel';
+import { Link, useParams } from 'react-router-dom';
+import { usePeerToPeerClient } from '../hooks/usePeerToPeer';
 import { MessageType } from '../types';
 import type { VideoStatePayload, BroadcastMessage } from '../types';
 import { STAMPS } from '../constants';
 
 const UserPage: React.FC = () => {
   const [videoState, setVideoState] = useState<VideoStatePayload | null>(null);
+  const { hostId } = useParams<{ hostId: string }>();
 
   const handleMessage = useCallback((message: BroadcastMessage) => {
     if (message.type === MessageType.VIDEO_STATE) {
@@ -15,10 +15,10 @@ const UserPage: React.FC = () => {
     }
   }, []);
 
-  const { postMessage } = useBroadcastChannel(handleMessage);
+  const { isConnected, postMessage } = usePeerToPeerClient(hostId, { onMessage: handleMessage });
 
   const sendStamp = (stamp: string) => {
-    if (videoState) {
+    if (videoState && isConnected) {
       postMessage({
         type: MessageType.SEND_STAMP,
         stamp: stamp,
@@ -33,6 +33,25 @@ const UserPage: React.FC = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const StatusDisplay = () => {
+      if (!hostId) {
+          return <div className="bg-red-500 text-white p-4 rounded-lg mb-6 text-center">
+            <h2 className="text-lg font-semibold">Error</h2>
+             <p>No Host ID provided in URL.</p>
+          </div>
+      }
+      if (isConnected) {
+          return <div className="bg-green-600/90 text-white p-4 rounded-lg mb-6 text-center">
+            <h2 className="text-lg font-semibold">Connected to Host</h2>
+             <p>Ready to send stamps!</p>
+          </div>
+      }
+      return <div className="bg-yellow-500/90 text-gray-900 p-4 rounded-lg mb-6 text-center">
+        <h2 className="text-lg font-semibold">Connecting...</h2>
+        <p>Attempting to connect to the host room.</p>
+      </div>
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-md bg-gray-800 rounded-2xl shadow-xl p-6">
@@ -41,6 +60,8 @@ const UserPage: React.FC = () => {
           <p className="text-gray-400">Tap a stamp to send it to the video!</p>
         </div>
         
+        <StatusDisplay />
+
         {videoState ? (
           <div className="bg-gray-700 p-4 rounded-lg mb-6 text-center">
             <h2 className="text-lg font-semibold truncate">{videoState.videoTitle}</h2>
@@ -50,9 +71,9 @@ const UserPage: React.FC = () => {
             </span>
           </div>
         ) : (
-          <div className="bg-gray-700 p-4 rounded-lg mb-6 text-center">
-             <h2 className="text-lg font-semibold">Waiting for video...</h2>
-             <p className="text-gray-400">Please start playback in the Admin view.</p>
+           <div className="bg-gray-700 p-4 rounded-lg mb-6 text-center h-28 flex flex-col justify-center">
+             <h2 className="text-lg font-semibold">Waiting for video state...</h2>
+             <p className="text-gray-400">Waiting for the host to start playback.</p>
           </div>
         )}
 
@@ -61,8 +82,9 @@ const UserPage: React.FC = () => {
             <button
               key={stamp}
               onClick={() => sendStamp(stamp)}
-              disabled={!videoState?.isPlaying}
+              disabled={!videoState?.isPlaying || !isConnected}
               className="aspect-square text-4xl bg-gray-700 rounded-lg flex items-center justify-center transition-transform transform hover:scale-110 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              aria-label={`Send ${stamp} stamp`}
             >
               {stamp}
             </button>
